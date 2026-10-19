@@ -2,6 +2,7 @@ package com.client;
 
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
+import com.google.gson.JsonObject;
 
 public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente - servidor
     private static UtilsWS instance;
@@ -78,5 +79,44 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
             System.out.println("No hay conexión con el servidor.");
         }
     }
+
+    public void sendJson(JsonObject message) { //Para convertir el objeto Json en texto
+        if (webSocket != null) {
+            webSocket.sendText(message.toString(), true);
+        } else {
+            System.out.println("No hay conexión con el servidor.");
+        }
+    }
+
+    
+    public void sendAim(double x, double y) { //Es para enviar la informacion a la hora de apuntar al servidor 
+        JsonObject message = new JsonObject(); //Objeto json vacio
+
+        message.addProperty("type", "AIM"); //El tipo de accion es AIM
+        message.addProperty("x", x); 
+        message.addProperty("y", y); //Agrega las coordenadas 
+
+        sendJson(message); // Enviamos el mensaje al servidor 
+    }
+
+    /*
+    sendAction, recibira como argumentos:
+    MOVE_FORWARD
+    MOVE_BACKWARD
+    TURN_LEFT 
+    TURN_RIGHT
+    STOP_MOVE
+    AIM
+    FIRE
+    */
+
+    public void sendAction(String action) { //Recibe el nombre de la accion mediante action 
+        JsonObject message = new JsonObject(); //Crea json vacio 
+
+        message.addProperty("type", action); // Como propiedad agrega type con el nombre de la accion 
+
+        sendJson(message); //Envia el mensaje 
+    }
+
 
 }

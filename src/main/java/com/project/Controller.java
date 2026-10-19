@@ -19,6 +19,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
+import com.client.UtilsWS;
+
 public class Controller implements Initializable {
 
     @FXML private Canvas canvas;
@@ -86,12 +88,47 @@ public class Controller implements Initializable {
 
         // Iniciar events de teclat
         canvas.getScene().setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.R) resetBoard();
-            else pressedKeys.add(event.getCode());
+            KeyCode key = event.getCode();
+
+            if (key == KeyCode.R) {
+                resetBoard();
+            return;
+            }
+
+            if (!pressedKeys.add(key)) {
+                return;
+            }
+
+            switch (key) {
+                case UP, W ->
+                    UtilsWS.getInstance().sendAction("MOVE_FORWARD");
+
+                case DOWN, S ->
+                    UtilsWS.getInstance().sendAction("MOVE_BACKWARD");
+
+                case LEFT, A ->
+                    UtilsWS.getInstance().sendAction("TURN_LEFT");
+
+                case RIGHT, D ->
+                    UtilsWS.getInstance().sendAction("TURN_RIGHT");
+
+                default -> {
+                    // No enviamos acciones para otras teclas.
+                }
+            }
         });
-        canvas.getScene().setOnKeyReleased(event -> pressedKeys.remove(event.getCode()));
-        canvas.getScene().getWindow().focusedProperty().addListener((obs, old, focused) -> {
-            if (!focused) pressedKeys.clear();
+
+        canvas.getScene().setOnKeyReleased(event -> {
+            KeyCode key = event.getCode();
+            pressedKeys.remove(key);
+
+            if (key == KeyCode.UP || key == KeyCode.W
+                    || key == KeyCode.DOWN || key == KeyCode.S
+                    || key == KeyCode.LEFT || key == KeyCode.A
+                    || key == KeyCode.RIGHT || key == KeyCode.D) {
+
+                UtilsWS.getInstance().sendAction("STOP_MOVE");
+            }
         });
     }
 
