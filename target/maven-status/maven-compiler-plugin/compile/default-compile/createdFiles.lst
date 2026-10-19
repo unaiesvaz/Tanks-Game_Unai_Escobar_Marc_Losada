@@ -1,5 +1,7 @@
 com\project\ObjectDynamic.class
 com\project\HelperMath.class
+com\server\GameManager.class
+com\server\Main.class
 com\project\ObjectStatic.class
 com\project\Bullet.class
 com\project\Main.class
@@ -8,5 +10,9 @@ com\project\CnvTimer.class
 com\project\Controller.class
 com\project\HelperCollisions.class
 com\project\Tank.class
+com\client\UtilsWS.class
 com\project\Target.class
+com\server\TankEndpoint.class
 com\project\Explosion.class
+com\client\UtilsWS$1.class
+com\server\ClientRegistry.class
