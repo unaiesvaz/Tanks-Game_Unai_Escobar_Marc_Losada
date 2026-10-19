@@ -1,8 +1,8 @@
 C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\Explosion.java
-C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\ObjectStatic.java
+C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\server\ClientRegistry.java
+C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\server\GameManager.java
 C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\Main.java
-C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\ObjectDynamic.java
-C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\Tank.java
+C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\client\UtilsWS.java
 C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\ObjectBase.java
 C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\Target.java
 C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\HelperCollisions.java
@@ -10,3 +10,7 @@ C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Los
 C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\HelperMath.java
 C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\Bullet.java
 C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\CnvTimer.java
+C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\server\Main.java
+C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\ObjectStatic.java
+C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\ObjectDynamic.java
+C:\Users\Unai\Documents\GitHub\DAM-DesInvTeoria\Tanks-Game_Unai_Escobar_Marc_Losada\src\main\java\com\project\Tank.java
