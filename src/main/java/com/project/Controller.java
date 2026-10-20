@@ -89,7 +89,9 @@ public class Controller implements Initializable {
             updateTarget(event);
             if (event.getButton() == MouseButton.PRIMARY) {
                 UtilsWS.getInstance().sendAction("FIRE"); //Enviamos al servidor este evento (disparar)
-                fireBullet();
+                if (!serverAuthoritative) {
+                    fireBullet();
+                }
             }
         });
 
@@ -206,6 +208,12 @@ public class Controller implements Initializable {
     private void update() {
         double dt = calculateDt();
         if (dt <= 0) return;
+
+        if (serverAuthoritative) { //Las posiciones vendran del servidor
+            updateExplosions(dt);
+            tank.pointAt(target.getPosition());
+            return;
+        }
 
         // Moure i comprovar col·lisions en PHYSICS_PRECISION passos petits.
         // Això evita que dos moviments ràpids "se saltin" sense detectar el xoc,
@@ -378,8 +386,23 @@ public class Controller implements Initializable {
         }
     }
 
+    private boolean serverAuthoritative = false;
+
     private void receiveGameState(GameState state) { //El metodo sirve para comprobar que el estado del juego llega a Controller 
         Platform.runLater(() -> {
+            
+            if (state.getTanks().isEmpty()) {
+                return;
+            }
+
+        serverAuthoritative = true;
+
+        String myId = UtilsWS.getInstance().getPlayerId();
+
+        if (myId == null) {
+            return;
+        }
+
         for (TankState tankState : state.getTanks()) {
 
             if (tankState.getId().equals("player1")) {

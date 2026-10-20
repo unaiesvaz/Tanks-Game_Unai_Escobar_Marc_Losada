@@ -27,9 +27,26 @@ public class TankEndpoint {
         
         // 1. Registramos su conexión de red
         registry.registerClient(playerId, session);
-        
+
+        int numeroJugador = registry.getActiveSessions().size();
+
+        double startX = numeroJugador == 1 ? 100.0 : 700.0;
+        double startY = 250.0;
+
         // 2. Le creamos un tanque matemático en el mapa (ej. posición inicial x: 100, y: 100)
-        gameManager.addTank(playerId, 100.0, 100.0);
+        gameManager.addTank(playerId, startX, startY);
+
+        String welcome = "{\"type\":\"WELCOME\",\"id\":\""+ playerId + "\"}"; //Comunicar al cliente su identificador
+
+        session.getAsyncRemote().sendText(welcome);
+
+        System.out.println(
+            "Jugador conectado: " + playerId
+            + " | Posición inicial: " + startX + ", " + startY);
+
+
+        
+        
     }
 
     @OnMessage
