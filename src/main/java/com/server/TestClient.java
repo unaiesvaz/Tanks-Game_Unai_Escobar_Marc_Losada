@@ -38,7 +38,7 @@ public class TestClient {
 
         Session session = container.connectToServer(
                 TestClient.class,
-                URI.create("ws://localhost:3000/tanks")
+                URI.create("ws://localhost:3000/tank")
         );
 
         System.out.println("Conexión establecida. Pulsa Enter para salir.");
