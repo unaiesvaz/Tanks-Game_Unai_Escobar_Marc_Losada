@@ -67,6 +67,7 @@ public class Controller implements Initializable {
         resetBoard();
 
         UtilsWS.getInstance().setStateListener(this::receiveGameState);
+        UtilsWS.getInstance().connect("ws://localhost:3000/tank");
 
         // Iniciar events
         // (amb Platform.runLater() per assegurar que ja hi ha escena)

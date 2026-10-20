@@ -178,7 +178,7 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
             double x = tankJson.getDouble("x");
             double y = tankJson.getDouble("y");
             double angle = tankJson.getDouble("angle");
-            double turretAngle = tankJson.getDouble("turretAngle");
+            double turretAngle = tankJson.optDouble("turretAngle", angle);
             boolean alive = tankJson.getBoolean("alive");
 
             TankState tank = new TankState(id, x, y, angle,turretAngle, alive); // Crear el objeto que representa al tanque
