@@ -81,9 +81,13 @@ public class Controller implements Initializable {
         // Iniciar events de ratolí
         canvas.setOnMouseMoved(this::updateTarget);
         canvas.setOnMouseDragged(this::updateTarget);
+
         canvas.setOnMousePressed(event -> {
             updateTarget(event);
-            if (event.getButton() == MouseButton.PRIMARY) fireBullet();
+            if (event.getButton() == MouseButton.PRIMARY) {
+                UtilsWS.getInstance().sendAction("FIRE"); //Enviamos al servidor este evento (disparar)
+                fireBullet();
+            }
         });
 
         // Iniciar events de teclat
@@ -171,7 +175,12 @@ public class Controller implements Initializable {
 
     // Actualitzar la posició del punt de mira
     private void updateTarget(MouseEvent event) {
-        target.setPosition(event.getX(), event.getY());
+        target.setPosition(event.getX(), event.getY()); 
+
+        UtilsWS.getInstance().sendAim( //Enviamos la informacion al servidor 
+            event.getX(),
+            event.getY()
+        );
     }
 
     // Disparar una bala

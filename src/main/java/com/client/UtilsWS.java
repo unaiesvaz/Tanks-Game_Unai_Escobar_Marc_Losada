@@ -2,7 +2,14 @@ package com.client;
 
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
-import com.google.gson.JsonObject;
+import org.json.JSONObject;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
+import com.project.TankState;
+import com.project.GameState;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente - servidor
     private static UtilsWS instance;
@@ -28,9 +35,32 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
         
         @Override
         public java.util.concurrent.CompletionStage<?> onText( //Se ejecuta cuando llega un mensaje al servidor 
-                WebSocket webSocket, CharSequence data, boolean last) {
+            WebSocket webSocket, CharSequence data, boolean last) {
 
             System.out.println("Mensaje recibido: " + data);
+
+            try {
+                GameState state = parseGameState(data.toString()); //Para coger el estado del juego
+
+                if (state != null) {
+                    System.out.println("Estado de partida recibido.");
+
+                    for (TankState tank : state.getTanks()) { 
+                        System.out.println(
+                            "Tanque: " + tank.getId()
+                            + " | X: " + tank.getX()
+                            + " | Y: " + tank.getY()
+                            + " | Ángulo: " + tank.getAngle()
+                            + " | Vivo: " + tank.isAlive()
+                        );
+                    }
+                }
+
+            } catch (org.json.JSONException e) {
+                System.err.println(
+                    "Error al interpretar el mensaje JSON: " + e.getMessage()
+                );
+            }
 
             webSocket.request(1);
 
@@ -80,7 +110,7 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
         }
     }
 
-    public void sendJson(JsonObject message) { //Para convertir el objeto Json en texto
+    public void sendJson(JSONObject message) { //Para convertir el objeto Json en texto
         if (webSocket != null) {
             webSocket.sendText(message.toString(), true);
         } else {
@@ -90,11 +120,11 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
 
     
     public void sendAim(double x, double y) { //Es para enviar la informacion a la hora de apuntar al servidor 
-        JsonObject message = new JsonObject(); //Objeto json vacio
+        JSONObject message = new JSONObject(); //Objeto json vacio
 
-        message.addProperty("type", "AIM"); //El tipo de accion es AIM
-        message.addProperty("x", x); 
-        message.addProperty("y", y); //Agrega las coordenadas 
+        message.put("type", "AIM");//El tipo de accion es AIM
+        message.put("x", x);
+        message.put("y", y);//Agrega las coordenadas 
 
         sendJson(message); // Enviamos el mensaje al servidor 
     }
@@ -111,11 +141,40 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
     */
 
     public void sendAction(String action) { //Recibe el nombre de la accion mediante action 
-        JsonObject message = new JsonObject(); //Crea json vacio 
+        JSONObject message = new JSONObject(); //Crea json vacio 
 
-        message.addProperty("type", action); // Como propiedad agrega type con el nombre de la accion 
+        message.put("type", action); // Como propiedad agrega type con el nombre de la accion 
 
         sendJson(message); //Envia el mensaje 
+    }
+
+    private GameState parseGameState(String json) { //Este metodo nos sirve para convertir el mensaje JSON que recibimos del server en un objeto para poder utilizarlo
+        JSONObject message = new JSONObject(json);  
+
+        String type = message.getString("type");
+
+        if (!type.equals("STATE")) { // Comprobar que es un mensaje de estado de partida
+            return null;
+        }
+
+        JSONArray tanksJson = message.getJSONArray("tanks"); // Obtener el array de tanques del JSON
+        List<TankState> tanks = new ArrayList<>();
+
+        for (int i = 0; i < tanksJson.length(); i++) { // Recorrer los tanques recibidos
+            JSONObject tankJson = tanksJson.getJSONObject(i);
+
+            String id = tankJson.getString("id");
+            double x = tankJson.getDouble("x");
+            double y = tankJson.getDouble("y");
+            double angle = tankJson.getDouble("angle");
+            boolean alive = tankJson.getBoolean("alive");
+
+            TankState tank = new TankState(id, x, y, angle, alive); // Crear el objeto que representa al tanque
+
+            tanks.add(tank);
+        }
+
+        return new GameState(type, tanks); // Crear y devolver el estado de la partida
     }
 
 
