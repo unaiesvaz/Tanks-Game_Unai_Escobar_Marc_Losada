@@ -32,9 +32,9 @@
             <version>22</version>
         </dependency>
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.13.2</version>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
         </dependency>
         <!--Permite que tu programa se conecte como cliente a un servidor WebSocket para enviar y recibir datos.-->
         <dependency>
