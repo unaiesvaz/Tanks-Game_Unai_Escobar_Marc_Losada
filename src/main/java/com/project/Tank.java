@@ -94,4 +94,15 @@ class Tank extends ObjectDynamic {
         gc.fillOval(-9, -9, 18, 18);
         gc.restore();
     }
+
+    void applyState(TankState state) { //Este metodo actualiza todo lo relacionado con el tanque, posicion, torreta, etc.
+        setPosition(new Point2D(state.getX(), state.getY()));
+        setAngle(state.getAngle());
+        this.turretAngle = state.getTurretAngle();
+        this.alive = state.isAlive();
+
+        if (!alive) {
+            setSpeed(0);
+        }
+    }
 }

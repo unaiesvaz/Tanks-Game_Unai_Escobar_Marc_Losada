@@ -4,7 +4,6 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import org.json.JSONObject;
 
-import org.json.JSONObject;
 import org.json.JSONArray;
 import com.project.TankState;
 import com.project.GameState;
@@ -16,6 +15,9 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
 
     private final HttpClient client; //Iniciar conexion de webSockets
     private WebSocket webSocket; 
+
+    private java.util.function.Consumer<GameState> stateListener; //Permite guardar una funcion que se ejecutara cuando llegue un estado de partida
+
 
     private UtilsWS() {
         client = HttpClient.newHttpClient();
@@ -43,6 +45,10 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
                 GameState state = parseGameState(data.toString()); //Para coger el estado del juego
 
                 if (state != null) {
+
+                    if (stateListener != null) {
+                        stateListener.accept(state);
+                    }
                     System.out.println("Estado de partida recibido.");
 
                     for (TankState tank : state.getTanks()) { 
@@ -100,6 +106,11 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
         }
 
         return instance;
+    }
+
+    public void setStateListener(
+        java.util.function.Consumer<GameState> listener) {
+        this.stateListener = listener;
     }
 
     public void sendMessage(String message) { //Recibe el mensaje que queremos enviar al servidor 
@@ -167,9 +178,10 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
             double x = tankJson.getDouble("x");
             double y = tankJson.getDouble("y");
             double angle = tankJson.getDouble("angle");
+            double turretAngle = tankJson.getDouble("turretAngle");
             boolean alive = tankJson.getBoolean("alive");
 
-            TankState tank = new TankState(id, x, y, angle, alive); // Crear el objeto que representa al tanque
+            TankState tank = new TankState(id, x, y, angle,turretAngle, alive); // Crear el objeto que representa al tanque
 
             tanks.add(tank);
         }

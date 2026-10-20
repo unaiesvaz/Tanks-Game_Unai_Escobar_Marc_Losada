@@ -66,6 +66,8 @@ public class Controller implements Initializable {
         // Iniciar tauler de joc i objectes
         resetBoard();
 
+        UtilsWS.getInstance().setStateListener(this::receiveGameState);
+
         // Iniciar events
         // (amb Platform.runLater() per assegurar que ja hi ha escena)
         Platform.runLater(() -> { configureInput(); });
@@ -373,5 +375,21 @@ public class Controller implements Initializable {
             target.drawGuide(gc, tank, staticObjects);
             target.draw(gc, tank);
         }
+    }
+
+    private void receiveGameState(GameState state) { //El metodo sirve para comprobar que el estado del juego llega a Controller 
+        Platform.runLater(() -> {
+        for (TankState tankState : state.getTanks()) {
+
+            if (tankState.getId().equals("player1")) {
+                tank.applyState(tankState);
+
+            } else if (tankState.getId().equals("player2")) {
+                enemy.applyState(tankState);
+            }
+        }
+
+        redraw();
+        });
     }
 }
