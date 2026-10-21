@@ -91,7 +91,9 @@ public class Controller implements Initializable {
             updateTarget(event);
             if (event.getButton() == MouseButton.PRIMARY) {
                 UtilsWS.getInstance().sendAction("FIRE"); //Enviamos al servidor este evento (disparar)
-                fireBullet();
+                if (!serverAuthoritative) {
+                    fireBullet();
+                }
             }
         });
 
@@ -207,10 +209,20 @@ public class Controller implements Initializable {
     // Actualitzar la lògica del joc (run)
     // Modifica el método update para que quede así:
     private void update() {
-        double dt = calculateDt(); //
-        if (dt <= 0) return; //
+        double dt = calculateDt();
+        if (dt <= 0) return;
 
-        double stepDt = dt / PHYSICS_PRECISION; //
+        if (serverAuthoritative) { //Las posiciones vendran del servidor
+            updateExplosions(dt);
+            tank.pointAt(target.getPosition());
+            return;
+        }
+
+        // Moure i comprovar col·lisions en PHYSICS_PRECISION passos petits.
+        // Això evita que dos moviments ràpids "se saltin" sense detectar el xoc,
+        // normalment això es fa amb matemàtiques més precises
+        // però així és més senzill i funciona prou bé per aquest joc.
+        double stepDt = dt / PHYSICS_PRECISION;
         for (int step = 0; step < PHYSICS_PRECISION; step++) {
             // updateTank(stepDt);  <--- ¡COMENTA O BORRA ESTA LÍNEA! El servidor se encarga ahora.
             updateBullets(stepDt); //
@@ -374,10 +386,24 @@ public class Controller implements Initializable {
         }
     }
 
-        private void receiveGameState(GameState state) { 
+    private boolean serverAuthoritative = false;
+
+    private void receiveGameState(GameState state) { //El metodo sirve para comprobar que el estado del juego llega a Controller 
         Platform.runLater(() -> {
-            List<TankState> activeTanks = state.getTanks();
-            if (activeTanks == null || activeTanks.isEmpty()) return;
+            
+            if (state.getTanks().isEmpty()) {
+                return;
+            }
+
+        serverAuthoritative = true;
+
+        String myId = UtilsWS.getInstance().getPlayerId();
+
+        if (myId == null) {
+            return;
+        }
+
+        for (TankState tankState : state.getTanks()) {
 
             // Extraemos de forma exacta NUESTRA ID real asignada por el WebSocket
             // (Ajusta "UtilsWS" si tu clase de red guarda ahí la sesión del cliente)

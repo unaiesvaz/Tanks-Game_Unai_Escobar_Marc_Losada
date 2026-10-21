@@ -98,11 +98,13 @@ class Tank extends ObjectDynamic {
     void applyState(TankState state) { //Este metodo actualiza todo lo relacionado con el tanque, posicion, torreta, etc.
         setPosition(new Point2D(state.getX(), state.getY()));
         setAngle(state.getAngle());
-        this.turretAngle = state.getTurretAngle();
+
+        if (!Double.isNaN(state.getTurretAngle())) {
+            this.turretAngle = state.getTurretAngle();
+        }
+
         this.alive = state.isAlive();
 
-        if (!alive) {
-            setSpeed(0);
-        }
+        setSpeed(0);
     }
 }

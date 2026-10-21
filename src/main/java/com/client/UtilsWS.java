@@ -16,11 +16,17 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
     private final HttpClient client; //Iniciar conexion de webSockets
     private WebSocket webSocket; 
 
+    private volatile String playerId;
+
     private java.util.function.Consumer<GameState> stateListener; //Permite guardar una funcion que se ejecutara cuando llegue un estado de partida
 
 
     private UtilsWS() {
         client = HttpClient.newHttpClient();
+    }
+
+    public String getPlayerId() {
+        return playerId;
     }
 
     public void connect(String serverUrl) { //Este metodo inicia la conexion con el servidor 
@@ -156,6 +162,8 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
 
         message.put("type", action); // Como propiedad agrega type con el nombre de la accion 
 
+        System.out.println("Enviando acción: " + action);
+
         sendJson(message); //Envia el mensaje 
     }
 
@@ -163,6 +171,12 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
         JSONObject message = new JSONObject(json);  
 
         String type = message.getString("type");
+
+        if (type.equals("WELCOME")) {
+            playerId = message.getString("id");
+            System.out.println("Mi ID de jugador es: " + playerId);
+            return null;
+        }
 
         if (!type.equals("STATE")) { // Comprobar que es un mensaje de estado de partida
             return null;
@@ -178,7 +192,7 @@ public class UtilsWS { //Clase encargada de gestionar la conexion entre cliente 
             double x = tankJson.getDouble("x");
             double y = tankJson.getDouble("y");
             double angle = tankJson.getDouble("angle");
-            double turretAngle = tankJson.optDouble("turretAngle", angle);
+            double turretAngle = tankJson.optDouble("turretAngle", Double.NaN);
             boolean alive = tankJson.getBoolean("alive");
 
             TankState tank = new TankState(id, x, y, angle,turretAngle, alive); // Crear el objeto que representa al tanque

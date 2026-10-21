@@ -25,6 +25,29 @@ $fxJars = foreach ($module in @("base", "controls", "fxml", "graphics")) {
 }
 $fxPath = $fxJars -join ";"
 
+# Obtener las dependencias necesarias para ejecutar el proyecto.
+mvn dependency:build-classpath "-Dmdep.outputFile=target/dependency-classpath.txt" "-Dmdep.includeScope=runtime"
+
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
+# Leer el classpath generado por Maven.
+$dependencyClasspath = (Get-Content "target/dependency-classpath.txt" -Raw).Trim()
+
+# JavaFX ya se carga mediante module-path.
+# Excluir sus JAR del classpath convencional.
+$dependencyJars = $dependencyClasspath.Split([char][IO.Path]::PathSeparator) |
+    Where-Object {
+        $_ -and ($_ -notmatch '[\\/]+org[\\/]+openjfx[\\/]')
+    }
+
+# Añadir las clases del proyecto y las dependencias externas.
+$classPath = (@("$PSScriptRoot\target\classes") + @($dependencyJars)) `
+    -join [IO.Path]::PathSeparator
+
+# Ejecutar la aplicación indicada.
 java --module-path $fxPath --add-modules javafx.controls,javafx.fxml `
-    -cp target/classes $mainClass
+    -cp $classPath $mainClass
+
 exit $LASTEXITCODE
