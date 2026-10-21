@@ -5,14 +5,25 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
+<VBox alignment="CENTER"
+      spacing="20.0"
+      prefHeight="400.0"
+      prefWidth="500.0"
+      xmlns="http://javafx.com/javafx/22"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.project.ResultViewController">
 
-<VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="400.0" spacing="20.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.project.ResultViewController">
-   <children>
-      <Label fx:id="winnerDetailLabel" text="¡Gracias por jugar!">
-         <font>
-            <Font name="System Bold" size="36.0" />
-         </font>
-      </Label>
-      <Button mnemonicParsing="false" onAction="#onBackButtonClick" text="VOLVER A JUGAR (BUSCAR PARTIDA)" />
-   </children>
+    <children>
+        <Label fx:id="resultLabel" text="Resultado">
+            <font>
+                <Font name="System Bold" size="36.0"/>
+            </font>
+        </Label>
+
+        <Label fx:id="winnerDetailLabel"
+               text="¡Gracias por jugar!"/>
+
+        <Button text="VOLVER A JUGAR"
+                onAction="#onBackButtonClick"/>
+    </children>
 </VBox>
