@@ -9,6 +9,22 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
 
+    private String playerName = "Jugador_1";
+    private String serverUrl = "wss://uescobarvazquez.ieti.site/tanks";
+
+    public void setConnectionDetails(String playerName, String serverUrl) {
+        this.playerName = playerName;
+        this.serverUrl = serverUrl;
+    }
+
+    public String getPlayerName() {
+        return playerName;
+    }
+
+    public String getServerUrl() {
+        return serverUrl;
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
         // 1. Aplicamos tus configuraciones visuales originales a la ventana
@@ -40,14 +56,26 @@ public class Main extends Application {
      */
     public void loadOriginalGame(Stage stage) {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("/assets/layout.fxml"));
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/assets/layout.fxml")
+            );
+
+            Parent root = loader.load();
+
+            Controller controller = loader.getController();
+
+            // Entregar al controlador los datos de la partida.
+            controller.setGameContext(this, stage, playerName);
+
             Scene scene = new Scene(root);
-            
             stage.setScene(scene);
-            // Enfoca la ventana para que el teclado funcione al instante en el juego
-            root.requestFocus(); 
+
+            root.requestFocus();
+
         } catch (Exception e) {
-            System.err.println("Error al cargar el juego original: " + e.getMessage());
+            System.err.println(
+                "Error al cargar el juego: " + e.getMessage()
+            );
             e.printStackTrace();
         }
     }

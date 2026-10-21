@@ -22,7 +22,7 @@
       <Label text="Nombre del Jugador:" />
       <TextField fx:id="nameField" maxWidth="250.0" text="Jugador_1" />
       <Label text="URL del Servidor:" />
-      <TextField fx:id="serverField" maxWidth="250.0" text="ws://localhost:3000/tank" />
+      <TextField fx:id="serverField" maxWidth="250.0" text="ws://uescobarvazquez.ieti.site/tanks" />
       <Button mnemonicParsing="false" onAction="#onConnectButtonClick" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="CONECTAR Y BUSCAR PARTIDA" />
       <Label fx:id="statusLabel" />
    </children>

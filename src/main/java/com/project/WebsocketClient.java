@@ -52,21 +52,47 @@ public class WebsocketClient {
         return myPlayerId;
     }
 
-    public void connect(String serverUrl) {
+    public synchronized boolean connect(String serverUrl) {
+        if (session != null && session.isOpen()) {
+            return true;
+        }
+
+        myPlayerId = null;
+
         try {
             WebSocketContainer container =
                     ContainerProvider.getWebSocketContainer();
 
-            System.out.println(
-                    "[Red] Conectando a: " + serverUrl);
+            System.out.println("[Red] Conectando a: " + serverUrl);
 
-            container.connectToServer(
-                    this, URI.create(serverUrl));
+            container.connectToServer(this, URI.create(serverUrl));
+
+            return session != null && session.isOpen();
 
         } catch (Exception e) {
             System.err.println(
-                    "[Red] Error al conectar: " + e.getMessage());
+                "[Red] Error al conectar: " + e.getMessage()
+            );
             e.printStackTrace();
+            return false;
+        }
+    }
+
+    public synchronized void disconnect() {
+        Session currentSession = session;
+
+        session = null;
+        myPlayerId = null;
+
+        if (currentSession != null && currentSession.isOpen()) {
+            try {
+                currentSession.close();
+            } catch (Exception e) {
+                System.err.println(
+                    "[Red] Error al cerrar la conexión: "
+                    + e.getMessage()
+                );
+            }
         }
     }
 
@@ -154,10 +180,18 @@ public class WebsocketClient {
     }
 
     @OnClose
-    public void onClose(Session session,jakarta.websocket.CloseReason reason) {
-        this.session = null;
+    public void onClose(
+            Session closedSession,
+            jakarta.websocket.CloseReason reason) {
+
+        if (this.session == closedSession) {
+            this.session = null;
+            this.myPlayerId = null;
+        }
+
         System.out.println(
-                "[Red] Conexión cerrada: " + reason);
+            "[Red] Conexión cerrada: " + reason
+        );
     }
 
     @OnError
