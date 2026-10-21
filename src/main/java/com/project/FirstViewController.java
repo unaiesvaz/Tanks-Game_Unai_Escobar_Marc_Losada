@@ -29,7 +29,9 @@ public class FirstViewController {
         this.stage = stage;
         
         if (nameField != null) nameField.setText("Jugador_1");
-        if (serverField != null) serverField.setText("ws://localhost:3000/tanks");
+        if (serverField != null) {
+            serverField.setText("wss://uescobarvazquez.ieti.site/tanks");
+        }
     }
 
     /**
@@ -53,6 +55,8 @@ public class FirstViewController {
             statusLabel.setStyle("-fx-text-fill: #c0392b; -fx-font-weight: bold;");
             return;
         }
+
+        mainApp.setConnectionDetails(name, url);
 
         statusLabel.setText("Conectando...");
         statusLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");

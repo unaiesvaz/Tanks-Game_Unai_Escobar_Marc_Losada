@@ -1,5 +1,7 @@
 package com.project;
 
+import com.client.UtilsWS;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
@@ -24,13 +26,13 @@ public class ResultViewController {
 
         // 1. Configurar el título principal para el jugador local
         if (isWinner) {
-            resultLabel.setText("¡VICTORIA!");
+            resultLabel.setText("¡VICTORIA, " + myName + "!");
             resultLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold; -fx-font-size: 36px;");
             
             // Detalle de quién ha ganado en español
             winnerDetailLabel.setText("Has ganado la partida contra " + enemyName);
         } else {
-            resultLabel.setText("DERROTA");
+            resultLabel.setText("DERROTA, " + myName);
             resultLabel.setStyle("-fx-text-fill: #c0392b; -fx-font-weight: bold; -fx-font-size: 36px;");
             
             // Detalle de quién ha ganado en español
@@ -45,16 +47,27 @@ public class ResultViewController {
      */
     @FXML
     private void onBackButtonClick() {
-        System.out.println("[Resultado] Volviendo a buscar partida. Redirigiendo a la Sala de Espera...");
-        
-        // 1. Volvemos a conectar nuestro cliente WebSocket para buscar un rival (mismo o diferente)
-        // Usamos la URL que ya guardamos en los pasos iniciales
-        String serverUrl = UtilsWS.getInstance().getServerUrl(); 
-        if (serverUrl != null) {
-            UtilsWS.getInstance().connect(serverUrl);
-        }
+        System.out.println(
+            "[Resultado] Buscando una nueva partida..."
+        );
 
-        // 2. Saltamos directamente a la Segunda Vista (Sala de Espera)
+        WebsocketClient client = WebsocketClient.getInstance();
+
+        // Limpiar la conexión anterior por seguridad.
+        client.setGameStateListener(null);
+        client.setWaitingController(null);
+        client.disconnect();
+
+        // Mostrar primero la sala de espera.
         mainApp.loadWaitingRoom(stage);
+
+        // Conectar con la misma dirección configurada al principio.
+        boolean connected = client.connect(mainApp.getServerUrl());
+
+        if (!connected) {
+            System.err.println(
+                "[Resultado] No se ha podido conectar al servidor."
+            );
+        }
     }
 }

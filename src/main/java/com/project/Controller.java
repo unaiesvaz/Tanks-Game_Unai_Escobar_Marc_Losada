@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -17,6 +18,10 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+import javafx.animation.PauseTransition;
+import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class Controller implements Initializable {
 
@@ -58,6 +63,21 @@ public class Controller implements Initializable {
     private String enemyServerId = null;
     private boolean serverAuthoritative = false;
     private final Target target = new Target();
+
+    private Main mainApp;
+    private Stage gameStage;
+    private String playerName = "Jugador_1";
+    private boolean resultShown = false;
+
+    public void setGameContext(
+            Main mainApp,
+            Stage gameStage,
+            String playerName) {
+
+        this.mainApp = mainApp;
+        this.gameStage = gameStage;
+        this.playerName = playerName;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -412,30 +432,39 @@ public class Controller implements Initializable {
     private void receiveGameState(GameState state) {
         Platform.runLater(() -> {
 
-            if (state == null || state.getTanks() == null || state.getTanks().isEmpty()) {
+            if (resultShown
+                    || state == null
+                    || state.getTanks() == null
+                    || state.getTanks().isEmpty()) {
                 return;
             }
 
-            remoteBullets = state.getBullets();
+            remoteBullets = state.getBullets() != null
+                    ? state.getBullets()
+                    : new ArrayList<>();
 
-            // Obtener el identificador asignado por el servidor
             myServerId = WebsocketClient.getInstance().getMyPlayerId();
 
             if (myServerId == null) {
                 return;
             }
 
-            // A partir de aquí, el servidor controla las posiciones
+            // El servidor controla las posiciones de los objetos.
             serverAuthoritative = true;
+
+            TankState defeatedTank = null;
 
             for (TankState remoteTank : state.getTanks()) {
 
                 if (remoteTank.getId().equals(myServerId)) {
 
-                    // Comprobar si nuestro tanque acaba de ser destruido.
+                    // Detectar si nuestro tanque acaba de ser destruido.
                     if (tank.isAlive() && !remoteTank.isAlive()) {
                         addExplosion(
-                            new Point2D(remoteTank.getX(), remoteTank.getY()),
+                            new Point2D(
+                                remoteTank.getX(),
+                                remoteTank.getY()
+                            ),
                             60
                         );
                     }
@@ -444,10 +473,13 @@ public class Controller implements Initializable {
 
                 } else {
 
-                    // Comprobar si el tanque enemigo acaba de ser destruido.
+                    // Detectar si se ha destruido el tanque rival.
                     if (enemy.isAlive() && !remoteTank.isAlive()) {
                         addExplosion(
-                            new Point2D(remoteTank.getX(), remoteTank.getY()),
+                            new Point2D(
+                                remoteTank.getX(),
+                                remoteTank.getY()
+                            ),
                             60
                         );
                     }
@@ -455,10 +487,53 @@ public class Controller implements Initializable {
                     enemyServerId = remoteTank.getId();
                     enemy.applyState(remoteTank);
                 }
+
+                if (!remoteTank.isAlive()) {
+                    defeatedTank = remoteTank;
+                }
             }
 
-            // Redibujar el Canvas con las posiciones recibidas.
             redraw();
+
+            // Si ningún tanque ha muerto, la partida continúa.
+            if (defeatedTank == null
+                    || mainApp == null
+                    || gameStage == null) {
+                return;
+            }
+
+            // Evitar mostrar varias veces la pantalla de resultados.
+            resultShown = true;
+
+            boolean isWinner =
+                    !defeatedTank.getId().equals(myServerId);
+
+            // Mantener la explosión visible antes de cambiar de pantalla.
+            PauseTransition pause = new PauseTransition(
+                Duration.seconds(EXPLOSION_DURATION)
+            );
+
+            pause.setOnFinished(event -> {
+
+                if (timer != null) {
+                    timer.stop();
+                }
+
+                // Finalizada la partida, cerrar la conexión actual.
+                WebsocketClient client = WebsocketClient.getInstance();
+                client.setGameStateListener(null);
+                client.setWaitingController(null);
+                client.disconnect();
+
+                mainApp.loadResultView(
+                    gameStage,
+                    isWinner,
+                    playerName,
+                    "Rival"
+                );
+            });
+
+            pause.play();
         });
     }
 
