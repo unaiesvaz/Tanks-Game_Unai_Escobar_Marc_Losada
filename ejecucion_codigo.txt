@@ -1,0 +1,5 @@
+Para ejecutar el servidor:
+mvn -PrunMain "-Dexec.mainClass=com.server.Main" exec:java
+
+Para ejecutar un cliente:
+.\run.ps1 com.project.Main
