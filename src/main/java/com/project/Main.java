@@ -68,6 +68,27 @@ public class Main extends Application {
     }
 }
 
+    /**
+     * Carga la cuarta vista de resultados mostrando quién ha ganado y permitiendo revancha.
+     */
+    public void loadResultView(Stage stage, boolean isWinner, String myName, String enemyName) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/assets/result_view.fxml"));
+            Parent root = loader.load();
+            
+            ResultViewController controller = loader.getController();
+            // Le pasamos la información detallada de los nombres al controlador
+            controller.setGameResult(this, stage, isWinner, myName, enemyName);
+
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+        } catch (Exception e) {
+            System.err.println("Error al cargar la pantalla de resultados FXML: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
     public static void main(String[] args) {
         launch(args);
     }
