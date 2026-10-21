@@ -1,7 +1,10 @@
 package com.server;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +15,8 @@ public class GameManager {
     
     // Almacena el estado matemático de todos los tanques activos en la partida
     private final Map<String, TankState> tanks = new ConcurrentHashMap<>();
+
+    private final List<BulletState> bullets = new CopyOnWriteArrayList<>();
 
     public GameManager(ClientRegistry clientRegistry) {
         this.clientRegistry = clientRegistry;
@@ -53,6 +58,30 @@ public class GameManager {
         
         // 3. Enviar este estado actualizado a absolutamente todos los jugadores
         clientRegistry.broadcast(gameStateJson);
+
+        // Actualizar las balas y comprobar los impactos.
+        for (BulletState bullet : bullets) {
+
+            if (!bullet.update()) {
+                bullets.remove(bullet);
+                continue;
+            }
+
+            for (TankState target : tanks.values()) {
+
+                // Una bala no puede destruir el tanque que la ha disparado.
+                if (!target.isAlive()
+                        || target.getId().equals(bullet.getOwnerId())) {
+                    continue;
+                }
+
+                if (bullet.hits(target)) {
+                    target.destroy();
+                    bullets.remove(bullet);
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -73,6 +102,7 @@ public class GameManager {
             json.append("\"x\":").append(t.getX()).append(",");
             json.append("\"y\":").append(t.getY()).append(",");
             json.append("\"angle\":").append(t.getAngle()).append(",");
+            json.append("\"turretAngle\":").append(t.getTurretAngle()).append(",");
             json.append("\"alive\":").append(t.isAlive());
             json.append("}");
             if (i < tanks.size() - 1) {
@@ -82,11 +112,52 @@ public class GameManager {
         }
         
         json.append("],");
-        json.append("\"bullets\":[],"); // Se gestionarán más adelante
+
+        // Enviar las posiciones actuales de todas las balas.
+        List<BulletState> currentBullets = new ArrayList<>(bullets);
+
+        json.append("\"bullets\":[");
+
+        for (i = 0; i < currentBullets.size(); i++) {
+            BulletState bullet = currentBullets.get(i);
+
+            json.append("{");
+            json.append("\"x\":").append(bullet.getX()).append(",");
+            json.append("\"y\":").append(bullet.getY());
+            json.append("}");
+
+            if (i < currentBullets.size() - 1) {
+                json.append(",");
+            }
+        }
+
+        json.append("],");
         json.append("\"players\":[]");
         json.append("}");
         
         return json.toString();
+    }
+
+    public void fire(String playerId) {
+        TankState tank = tanks.get(playerId);
+
+        if (tank == null || !tank.isAlive()) {
+            return;
+        }
+
+        if (!tank.tryShoot()) {
+            System.out.println(
+                "[Disparo] Jugador " + playerId
+                + " todavía está recargando."
+            );
+            return;
+        }
+
+        bullets.add(new BulletState(tank));
+
+        System.out.println(
+            "[Disparo] Bala creada por " + playerId
+        );
     }
 
     public void stopGameLoop() {

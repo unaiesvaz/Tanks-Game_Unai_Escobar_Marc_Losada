@@ -2,12 +2,12 @@ package com.project;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -18,8 +18,10 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-
-import com.client.UtilsWS;
+import javafx.stage.Stage;
+import javafx.animation.PauseTransition;
+import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class Controller implements Initializable {
 
@@ -52,12 +54,30 @@ public class Controller implements Initializable {
     private final List<Bullet> bullets = new ArrayList<>();
     private final List<Explosion> explosions = new ArrayList<>();
     private final Set<KeyCode> pressedKeys = EnumSet.noneOf(KeyCode.class);
+    private List<RemoteBulletState> remoteBullets = new ArrayList<>();
 
     private final Tank tank = new Tank(new Point2D(90, 250), 0, 0, Color.DODGERBLUE);
     private final Tank enemy = new Tank(new Point2D(710, 250), 180, 180, Color.DARKGOLDENROD);
+
     private String myServerId = null;
     private String enemyServerId = null;
+    private boolean serverAuthoritative = false;
     private final Target target = new Target();
+
+    private Main mainApp;
+    private Stage gameStage;
+    private String playerName = "Jugador_1";
+    private boolean resultShown = false;
+
+    public void setGameContext(
+            Main mainApp,
+            Stage gameStage,
+            String playerName) {
+
+        this.mainApp = mainApp;
+        this.gameStage = gameStage;
+        this.playerName = playerName;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -68,8 +88,7 @@ public class Controller implements Initializable {
         // Iniciar tauler de joc i objectes
         resetBoard();
 
-        UtilsWS.getInstance().setStateListener(this::receiveGameState);
-        UtilsWS.getInstance().connect("ws://localhost:3000/tank");
+        WebsocketClient.getInstance().setGameStateListener(this::receiveGameState);
 
         // Iniciar events
         // (amb Platform.runLater() per assegurar que ja hi ha escena)
@@ -90,7 +109,7 @@ public class Controller implements Initializable {
         canvas.setOnMousePressed(event -> {
             updateTarget(event);
             if (event.getButton() == MouseButton.PRIMARY) {
-                UtilsWS.getInstance().sendAction("FIRE"); //Enviamos al servidor este evento (disparar)
+                WebsocketClient.getInstance().sendAction("FIRE"); //Enviamos al servidor este evento (disparar)
                 if (!serverAuthoritative) {
                     fireBullet();
                 }
@@ -112,19 +131,19 @@ public class Controller implements Initializable {
 
             switch (key) {
                 case UP, W ->
-                    UtilsWS.getInstance().sendAction("MOVE_FORWARD");
+                    WebsocketClient.getInstance().sendAction("MOVE_UP");
 
                 case DOWN, S ->
-                    UtilsWS.getInstance().sendAction("MOVE_BACKWARD");
+                    WebsocketClient.getInstance().sendAction("MOVE_DOWN");
 
                 case LEFT, A ->
-                    UtilsWS.getInstance().sendAction("TURN_LEFT");
+                    WebsocketClient.getInstance().sendAction("MOVE_LEFT");
 
                 case RIGHT, D ->
-                    UtilsWS.getInstance().sendAction("TURN_RIGHT");
+                    WebsocketClient.getInstance().sendAction("MOVE_RIGHT");
 
                 default -> {
-                    // No enviamos acciones para otras teclas.
+                    // No hacemos nada con las demás teclas.
                 }
             }
         });
@@ -133,12 +152,22 @@ public class Controller implements Initializable {
             KeyCode key = event.getCode();
             pressedKeys.remove(key);
 
-            if (key == KeyCode.UP || key == KeyCode.W
-                    || key == KeyCode.DOWN || key == KeyCode.S
-                    || key == KeyCode.LEFT || key == KeyCode.A
-                    || key == KeyCode.RIGHT || key == KeyCode.D) {
+            switch (key) {
+                case UP, W ->
+                    WebsocketClient.getInstance().sendAction("STOP_UP");
 
-                UtilsWS.getInstance().sendAction("STOP_MOVE");
+                case DOWN, S ->
+                    WebsocketClient.getInstance().sendAction("STOP_DOWN");
+
+                case LEFT, A ->
+                    WebsocketClient.getInstance().sendAction("STOP_LEFT");
+
+                case RIGHT, D ->
+                    WebsocketClient.getInstance().sendAction("STOP_RIGHT");
+
+                default -> {
+                    // No hacemos nada con las demás teclas.
+                }
             }
         });
     }
@@ -160,9 +189,9 @@ public class Controller implements Initializable {
         staticObjects.add(new ObjectStatic(w - WALL, 0, WALL, h, Color.DIMGRAY));
 
         // Iniciar obstacles escollint-ne dos aleatòriament de la llista d'opcions
-        List<ObjectStatic> options = new ArrayList<>(obstacleOptions);
-        Collections.shuffle(options);
-        staticObjects.addAll(options.subList(0, 2));
+        // Mismo mapa para todos los clientes.
+        staticObjects.add(obstacleOptions.get(1));
+        staticObjects.add(obstacleOptions.get(3));
 
         // Iniciar bales i explosions
         bullets.clear();
@@ -184,9 +213,9 @@ public class Controller implements Initializable {
     private void updateTarget(MouseEvent event) {
         target.setPosition(event.getX(), event.getY()); 
 
-        UtilsWS.getInstance().sendAim( //Enviamos la informacion al servidor 
-            event.getX(),
-            event.getY()
+        WebsocketClient.getInstance().sendAim(
+                event.getX(),
+                event.getY()
         );
     }
 
@@ -212,9 +241,8 @@ public class Controller implements Initializable {
         double dt = calculateDt();
         if (dt <= 0) return;
 
-        if (serverAuthoritative) { //Las posiciones vendran del servidor
+        if (serverAuthoritative) {
             updateExplosions(dt);
-            tank.pointAt(target.getPosition());
             return;
         }
 
@@ -372,6 +400,21 @@ public class Controller implements Initializable {
         // Dibuix de les bales
         for (Bullet bullet : bullets) bullet.draw(gc);
 
+        // Dibujar las balas sincronizadas desde el servidor
+        gc.save();
+        gc.setFill(Color.RED);
+
+        for (RemoteBulletState bullet : remoteBullets) {
+            gc.fillOval(
+                bullet.getX() - 4,
+                bullet.getY() - 4,
+                8,
+                8
+            );
+        }
+
+        gc.restore();
+
         // Dibuix dels tancs
         tank.draw(gc);
         enemy.draw(gc);
@@ -386,43 +429,111 @@ public class Controller implements Initializable {
         }
     }
 
-    private boolean serverAuthoritative = false;
-
-    private void receiveGameState(GameState state) { //El metodo sirve para comprobar que el estado del juego llega a Controller 
+    private void receiveGameState(GameState state) {
         Platform.runLater(() -> {
-            
-            if (state.getTanks().isEmpty()) {
+
+            if (resultShown
+                    || state == null
+                    || state.getTanks() == null
+                    || state.getTanks().isEmpty()) {
                 return;
             }
 
-        serverAuthoritative = true;
+            remoteBullets = state.getBullets() != null
+                    ? state.getBullets()
+                    : new ArrayList<>();
 
-        String myId = UtilsWS.getInstance().getPlayerId();
+            myServerId = WebsocketClient.getInstance().getMyPlayerId();
 
-        if (myId == null) {
-            return;
-        }
+            if (myServerId == null) {
+                return;
+            }
 
-        for (TankState tankState : state.getTanks()) {
+            // El servidor controla las posiciones de los objetos.
+            serverAuthoritative = true;
 
-            // Extraemos de forma exacta NUESTRA ID real asignada por el WebSocket
-            // (Ajusta "UtilsWS" si tu clase de red guarda ahí la sesión del cliente)
-            String miIdReal = UtilsWS.getInstance().getMyPlayerId(); 
+            TankState defeatedTank = null;
 
-            for (TankState tankState : activeTanks) {
-                String idRecibida = tankState.getId();
+            for (TankState remoteTank : state.getTanks()) {
 
-                if (idRecibida.equals(miIdReal)) {
-                    // Si el ID coincide con mi sesión de red, muevo mi tanque azul
-                    tank.applyState(tankState);
+                if (remoteTank.getId().equals(myServerId)) {
+
+                    // Detectar si nuestro tanque acaba de ser destruido.
+                    if (tank.isAlive() && !remoteTank.isAlive()) {
+                        addExplosion(
+                            new Point2D(
+                                remoteTank.getX(),
+                                remoteTank.getY()
+                            ),
+                            60
+                        );
+                    }
+
+                    tank.applyState(remoteTank);
+
                 } else {
-                    // Si es el ID del otro jugador, muevo el tanque enemigo
-                    enemyServerId = idRecibida;
-                    enemy.applyState(tankState);
+
+                    // Detectar si se ha destruido el tanque rival.
+                    if (enemy.isAlive() && !remoteTank.isAlive()) {
+                        addExplosion(
+                            new Point2D(
+                                remoteTank.getX(),
+                                remoteTank.getY()
+                            ),
+                            60
+                        );
+                    }
+
+                    enemyServerId = remoteTank.getId();
+                    enemy.applyState(remoteTank);
+                }
+
+                if (!remoteTank.isAlive()) {
+                    defeatedTank = remoteTank;
                 }
             }
 
-            redraw(); //
+            redraw();
+
+            // Si ningún tanque ha muerto, la partida continúa.
+            if (defeatedTank == null
+                    || mainApp == null
+                    || gameStage == null) {
+                return;
+            }
+
+            // Evitar mostrar varias veces la pantalla de resultados.
+            resultShown = true;
+
+            boolean isWinner =
+                    !defeatedTank.getId().equals(myServerId);
+
+            // Mantener la explosión visible antes de cambiar de pantalla.
+            PauseTransition pause = new PauseTransition(
+                Duration.seconds(EXPLOSION_DURATION)
+            );
+
+            pause.setOnFinished(event -> {
+
+                if (timer != null) {
+                    timer.stop();
+                }
+
+                // Finalizada la partida, cerrar la conexión actual.
+                WebsocketClient client = WebsocketClient.getInstance();
+                client.setGameStateListener(null);
+                client.setWaitingController(null);
+                client.disconnect();
+
+                mainApp.loadResultView(
+                    gameStage,
+                    isWinner,
+                    playerName,
+                    "Rival"
+                );
+            });
+
+            pause.play();
         });
     }
 

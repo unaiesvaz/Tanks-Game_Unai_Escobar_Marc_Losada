@@ -1,17 +1,36 @@
 package com.project;
 
-import jakarta.websocket.*;
+import jakarta.websocket.ClientEndpoint;
+import jakarta.websocket.ContainerProvider;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnError;
+import jakarta.websocket.OnMessage;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
+import jakarta.websocket.WebSocketContainer;
+
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 @ClientEndpoint
 public class WebsocketClient {
 
     private static WebsocketClient instance;
-    private Session session;
-    private WaitingViewController waitingController;
-    private String myPlayerId;
 
-    // Patrón Singleton para poder acceder a la red desde cualquier pantalla fácilmente
+    private Session session;
+    private volatile String myPlayerId;
+
+    private volatile WaitingViewController waitingController;
+    private volatile Consumer<GameState> gameStateListener;
+
+    private WebsocketClient() {
+    }
+
     public static WebsocketClient getInstance() {
         if (instance == null) {
             instance = new WebsocketClient();
@@ -19,80 +38,191 @@ public class WebsocketClient {
         return instance;
     }
 
-    // Permite a la sala de espera registrarse para escuchar los datos del servidor
-    public void setWaitingController(WaitingViewController controller) {
+    public void setWaitingController(
+            WaitingViewController controller) {
         this.waitingController = controller;
     }
 
-    /**
-     * Abre la conexión WebSocket con el servidor de forma asíncrona
-     */
-    public void connect(String serverUrl) {
+    public void setGameStateListener(
+            Consumer<GameState> listener) {
+        this.gameStateListener = listener;
+    }
+
+    public String getMyPlayerId() {
+        return myPlayerId;
+    }
+
+    public synchronized boolean connect(String serverUrl) {
+        if (session != null && session.isOpen()) {
+            return true;
+        }
+
+        myPlayerId = null;
+
         try {
-            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-            System.out.println("[Red] Intentando conectar a: " + serverUrl);
+            WebSocketContainer container =
+                    ContainerProvider.getWebSocketContainer();
+
+            System.out.println("[Red] Conectando a: " + serverUrl);
+
             container.connectToServer(this, URI.create(serverUrl));
+
+            return session != null && session.isOpen();
+
         } catch (Exception e) {
-            System.err.println("[Red] Error al conectar con el servidor: " + e.getMessage());
+            System.err.println(
+                "[Red] Error al conectar: " + e.getMessage()
+            );
             e.printStackTrace();
+            return false;
+        }
+    }
+
+    public synchronized void disconnect() {
+        Session currentSession = session;
+
+        session = null;
+        myPlayerId = null;
+
+        if (currentSession != null && currentSession.isOpen()) {
+            try {
+                currentSession.close();
+            } catch (Exception e) {
+                System.err.println(
+                    "[Red] Error al cerrar la conexión: "
+                    + e.getMessage()
+                );
+            }
         }
     }
 
     @OnOpen
     public void onOpen(Session session) {
         this.session = session;
-        this.myPlayerId = session.getId(); // El servidor usa la ID de la sesión de WebSocket
-        System.out.println("[Red] Conectado. Mi ID de jugador es: " + myPlayerId);
-    }
-
-    // Añade este getter abajo para que el juego pueda consultarlo
-    public String getMyPlayerId() {
-        return myPlayerId;
+        System.out.println(
+                "[Red] Conexión WebSocket establecida.");
     }
 
     @OnMessage
     public void onMessage(String message) {
-        // Aquí llega el JSON de tipo "STATE" 30 veces por segundo.
-        // Contamos cuántos tanques hay en la partida contando las apariciones de '"id":'
-        int totalPlayers = countOccurrences(message, "\"id\":");
+        try {
+            JSONObject json = new JSONObject(message);
+            String type = json.optString("type");
 
-        // Si estamos en la sala de espera, le enviamos el número de jugadores reales
-        if (waitingController != null) {
-            waitingController.onServerUpdateReceived(totalPlayers);
+            // El servidor nos comunica nuestro ID real.
+            if ("WELCOME".equals(type)) {
+                myPlayerId = json.getString("id");
+
+                System.out.println(
+                        "[Red] Mi ID de jugador: " + myPlayerId);
+                return;
+            }
+
+            // Ignorar los mensajes que no sean estados de partida.
+            if (!"STATE".equals(type)) {
+                return;
+            }
+
+            JSONArray tanksJson = json.getJSONArray("tanks");
+            List<TankState> tanks = new ArrayList<>();
+
+            for (int i = 0; i < tanksJson.length(); i++) {
+                JSONObject tankJson =
+                        tanksJson.getJSONObject(i);
+
+                String id = tankJson.getString("id");
+                double x = tankJson.getDouble("x");
+                double y = tankJson.getDouble("y");
+                double angle = tankJson.getDouble("angle");
+
+                // El servidor todavía puede no enviar este campo.
+                double turretAngle =
+                        tankJson.optDouble(
+                                "turretAngle", Double.NaN);
+
+                boolean alive = tankJson.getBoolean("alive");
+
+                tanks.add(new TankState(id, x, y, angle, turretAngle, alive));
+            }
+
+            // Leer las balas que envía el servidor
+            JSONArray bulletsJson = json.optJSONArray("bullets");
+            List<RemoteBulletState> bullets = new ArrayList<>();
+
+            if (bulletsJson != null) {
+                for (int i = 0; i < bulletsJson.length(); i++) {
+                    JSONObject bulletJson = bulletsJson.getJSONObject(i);
+
+                    double x = bulletJson.getDouble("x");
+                    double y = bulletJson.getDouble("y");
+
+                    bullets.add(new RemoteBulletState(x, y));
+                }
+            }
+
+            // Actualizar la sala de espera con el número de tanques.
+            WaitingViewController waiting = waitingController;
+            if (waiting != null) {
+                waiting.onServerUpdateReceived(tanks.size());
+            }
+
+            // Entregar el estado al controlador del juego.
+            Consumer<GameState> listener = gameStateListener;
+            if (listener != null) {
+                listener.accept(new GameState("STATE", tanks, bullets));
+            }
+
+        } catch (org.json.JSONException e) {
+            System.err.println(
+                    "[Red] Error interpretando JSON: "
+                            + e.getMessage());
         }
-        
-        // TODO: En el futuro, cuando estemos jugando (Vista 3), pasaremos este JSON 
-        // a la pantalla del juego para actualizar las posiciones de los tanques visuals.
     }
 
     @OnClose
-    public void onClose() {
-        System.out.println("[Red] Conexión cerrada con el servidor.");
-        this.session = null;
+    public void onClose(
+            Session closedSession,
+            jakarta.websocket.CloseReason reason) {
+
+        if (this.session == closedSession) {
+            this.session = null;
+            this.myPlayerId = null;
+        }
+
+        System.out.println(
+            "[Red] Conexión cerrada: " + reason
+        );
     }
 
     @OnError
-    public void onError(Throwable throwable) {
-        System.err.println("[Red] Error en el canal de comunicación: " + throwable.getMessage());
+    public void onError(Session session, Throwable error) {
+        System.err.println(
+                "[Red] Error WebSocket: " + error.getMessage());
     }
 
-    /**
-     * Envía comandos al servidor (ej: MOVE_FORWARD, FIRE, STOP_MOVE)
-     */
-    public void sendMessage(String jsonMessage) {
-        if (session != null && session.isOpen()) {
-            session.getAsyncRemote().sendText(jsonMessage);
-        }
+    public void sendAction(String action) {
+        JSONObject json = new JSONObject();
+        json.put("type", action);
+        sendJson(json);
     }
 
-    // Método auxiliar rápido para contar jugadores sin añadir librerías JSON externas
-    private int countOccurrences(String text, String substring) {
-        int count = 0;
-        int idx = 0;
-        while ((idx = text.indexOf(substring, idx)) != -1) {
-            count++;
-            idx += substring.length();
+    public void sendAim(double x, double y) {
+        JSONObject json = new JSONObject();
+        json.put("type", "AIM");
+        json.put("x", x);
+        json.put("y", y);
+        sendJson(json);
+    }
+
+    private void sendJson(JSONObject json) {
+        Session currentSession = session;
+
+        if (currentSession != null && currentSession.isOpen()) {
+            currentSession.getAsyncRemote().sendText(
+                    json.toString());
+        } else {
+            System.out.println(
+                    "[Red] No hay conexión con el servidor.");
         }
-        return count;
     }
 }

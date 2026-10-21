@@ -22,9 +22,16 @@ if [[ ! -f "$RSA_PATH" ]]; then
     exit 1
 fi
 
-echo "Generant el fitxer JAR..."
+echo "Generando el JAR del servidor..."
 rm -f "$JAR_PATH"
-./run.sh com.server.Main build
+
+mvn clean package -DskipTests
+
+if [ $? -ne 0 ]; then
+    echo "Error al generar el JAR."
+    cd proxmox
+    exit 1
+fi
 
 if [[ ! -f "$JAR_PATH" ]]; then
     echo "Error: No s'ha trobat l'arxiu JAR: $JAR_PATH"
