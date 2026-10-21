@@ -1,5 +1,7 @@
 package com.server;
 
+import org.json.JSONObject;
+
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnError;
 import jakarta.websocket.OnMessage;
@@ -54,28 +56,75 @@ public class TankEndpoint {
         String playerId = session.getId();
         TankState tank = gameManager.getTank(playerId);
 
-        // Si el jugador no existe o está destruido, ignoramos sus inputs
-        if (tank == null || !tank.isAlive()) return;
+        if (tank == null) {
+            return;
+        }
 
-        // Filtramos el mensaje de texto plano según el protocolo JSON que acordamos.
-        // Lo hacemos con contains() para evitar meter librerías de JSON externas.
-        if (message.contains("MOVE_FORWARD")) {
-            tank.setMovingForward(true);
-        } else if (message.contains("MOVE_BACKWARD")) {
-            tank.setMovingBackward(true);
-        } else if (message.contains("TURN_LEFT")) {
-            tank.setTurningLeft(true);
-        } else if (message.contains("TURN_RIGHT")) {
-            tank.setTurningRight(true);
-        } else if (message.contains("STOP_MOVE")) {
-            // Apagamos todas las marchas de movimiento cuando el jugador suelta las teclas
-            tank.setMovingForward(false);
-            tank.setMovingBackward(false);
-            tank.setTurningLeft(false);
-            tank.setTurningRight(false);
-        } else if (message.contains("FIRE")) {
-            // Lógica de disparo (se implementará cuando añadamos las balas)
-            System.out.println("[Disparo] El jugador " + playerId + " ha disparado.");
+        try {
+            JSONObject json = new JSONObject(message);
+            String action = json.optString("type");
+
+            // El apuntado se recibe como coordenadas del ratón.
+            if ("AIM".equals(action)) {
+                if (tank.isAlive()) {
+                    tank.aimAt(
+                        json.getDouble("x"),
+                        json.getDouble("y")
+                    );
+                }
+                return;
+            }
+
+            // Procesar el disparo antes de las acciones de movimiento.
+            if ("FIRE".equals(action)) {
+                if (tank.isAlive()) {
+                    gameManager.fire(playerId);
+                }
+                return;
+            }
+
+            // No permitir movimiento si el tanque ha sido destruido.
+            if (!tank.isAlive()) {
+                return;
+            }
+
+            if ("MOVE_UP".equals(action)
+                    || "MOVE_FORWARD".equals(action)) {
+                tank.setMovingUp(true);
+
+            } else if ("MOVE_DOWN".equals(action)
+                    || "MOVE_BACKWARD".equals(action)) {
+                tank.setMovingDown(true);
+
+            } else if ("MOVE_LEFT".equals(action)
+                    || "TURN_LEFT".equals(action)) {
+                tank.setMovingLeft(true);
+
+            } else if ("MOVE_RIGHT".equals(action)
+                    || "TURN_RIGHT".equals(action)) {
+                tank.setMovingRight(true);
+
+            } else if ("STOP_UP".equals(action)) {
+                tank.setMovingUp(false);
+
+            } else if ("STOP_DOWN".equals(action)) {
+                tank.setMovingDown(false);
+
+            } else if ("STOP_LEFT".equals(action)) {
+                tank.setMovingLeft(false);
+
+            } else if ("STOP_RIGHT".equals(action)) {
+                tank.setMovingRight(false);
+
+            } else if ("STOP_MOVE".equals(action)) {
+                tank.stopMoving();
+            }
+
+        } catch (Exception e) {
+            System.err.println(
+                "[Servidor] Error procesando mensaje de "
+                + playerId + ": " + e.getMessage()
+            );
         }
     }
 
