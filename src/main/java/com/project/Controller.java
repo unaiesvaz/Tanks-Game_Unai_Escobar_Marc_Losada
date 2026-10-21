@@ -55,6 +55,8 @@ public class Controller implements Initializable {
 
     private final Tank tank = new Tank(new Point2D(90, 250), 0, 0, Color.DODGERBLUE);
     private final Tank enemy = new Tank(new Point2D(710, 250), 180, 180, Color.DARKGOLDENROD);
+    private String myServerId = null;
+    private String enemyServerId = null;
     private final Target target = new Target();
 
     @Override
@@ -203,25 +205,19 @@ public class Controller implements Initializable {
     }
 
     // Actualitzar la lògica del joc (run)
+    // Modifica el método update para que quede así:
     private void update() {
-        double dt = calculateDt();
-        if (dt <= 0) return;
+        double dt = calculateDt(); //
+        if (dt <= 0) return; //
 
-        // Moure i comprovar col·lisions en PHYSICS_PRECISION passos petits.
-        // Això evita que dos moviments ràpids "se saltin" sense detectar el xoc,
-        // normalment això es fa amb matemàtiques més precises
-        // però així és més senzill i funciona prou bé per aquest joc.
-        double stepDt = dt / PHYSICS_PRECISION;
+        double stepDt = dt / PHYSICS_PRECISION; //
         for (int step = 0; step < PHYSICS_PRECISION; step++) {
-            updateTank(stepDt);
-            updateBullets(stepDt);
+            // updateTank(stepDt);  <--- ¡COMENTA O BORRA ESTA LÍNEA! El servidor se encarga ahora.
+            updateBullets(stepDt); //
         }
 
-        // Les explosions només s'animen, no xoquen: n'hi ha prou amb un cop.
-        updateExplosions(dt);
-
-        // Apuntar des de la posició final del tanc.
-        tank.pointAt(target.getPosition());
+        updateExplosions(dt); //
+        tank.pointAt(target.getPosition()); //
     }
 
     // Calcular el temps transcorregut, en segons, des de l'última actualització.
@@ -378,19 +374,30 @@ public class Controller implements Initializable {
         }
     }
 
-    private void receiveGameState(GameState state) { //El metodo sirve para comprobar que el estado del juego llega a Controller 
+        private void receiveGameState(GameState state) { 
         Platform.runLater(() -> {
-        for (TankState tankState : state.getTanks()) {
+            List<TankState> activeTanks = state.getTanks();
+            if (activeTanks == null || activeTanks.isEmpty()) return;
 
-            if (tankState.getId().equals("player1")) {
-                tank.applyState(tankState);
+            // Extraemos de forma exacta NUESTRA ID real asignada por el WebSocket
+            // (Ajusta "UtilsWS" si tu clase de red guarda ahí la sesión del cliente)
+            String miIdReal = UtilsWS.getInstance().getMyPlayerId(); 
 
-            } else if (tankState.getId().equals("player2")) {
-                enemy.applyState(tankState);
+            for (TankState tankState : activeTanks) {
+                String idRecibida = tankState.getId();
+
+                if (idRecibida.equals(miIdReal)) {
+                    // Si el ID coincide con mi sesión de red, muevo mi tanque azul
+                    tank.applyState(tankState);
+                } else {
+                    // Si es el ID del otro jugador, muevo el tanque enemigo
+                    enemyServerId = idRecibida;
+                    enemy.applyState(tankState);
+                }
             }
-        }
 
-        redraw();
+            redraw(); //
         });
     }
+
 }

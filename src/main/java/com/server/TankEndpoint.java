@@ -7,7 +7,7 @@ import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
 
-@ServerEndpoint("/tank")
+@ServerEndpoint("/tanks")
 public class TankEndpoint {
 
     // Instanciamos el registro y el administrador de forma estática 

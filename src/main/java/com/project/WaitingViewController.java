@@ -24,9 +24,11 @@ public class WaitingViewController {
         this.mainApp = mainApp;
         this.stage = stage;
         
-        // Inicializamos los textos en español limpios
         statusLabel.setText("Buscando contrincante en el servidor...");
         countdownLabel.setText("");
+
+        // Vinculamos esta pantalla con el cliente de red para enterarnos de cuándo entra el rival
+        WebsocketClient.getInstance().setWaitingController(this);
     }
 
     /**

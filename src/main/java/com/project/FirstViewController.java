@@ -41,7 +41,7 @@ public class FirstViewController {
         String name = nameField.getText().trim();
         String url = serverField.getText().trim();
 
-        // 1. Validaciones de los campos en español
+        // Validaciones en español
         if (name.isEmpty() || url.isEmpty()) {
             statusLabel.setText("Error: Los campos no pueden estar vacíos.");
             statusLabel.setStyle("-fx-text-fill: #c0392b; -fx-font-weight: bold;");
@@ -54,13 +54,14 @@ public class FirstViewController {
             return;
         }
 
-        // 2. Si pasa las validaciones, muestra el estado de carga
         statusLabel.setText("Conectando...");
         statusLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
 
-        System.out.println("[SceneBuilder] Iniciando conexión para: " + name + " en " + url);
+        // 1. Iniciamos la conexión WebSocket real con la URL escrita en la interfaz
+        WebsocketClient.getInstance().connect(url);
 
-        // 3. Saltamos de forma segura a cargar tu juego original (layout.fxml)
+        // 2. Saltamos de forma automática a la pantalla de espera
         mainApp.loadWaitingRoom(stage);
     }
+
 }
