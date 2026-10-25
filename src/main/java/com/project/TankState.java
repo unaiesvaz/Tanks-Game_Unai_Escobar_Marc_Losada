@@ -1,6 +1,7 @@
 package com.project;
 
-public class TankState {
+public class TankState { //Para dar el estado del tanque en determinados puntos de la partida
+    //Posicion, a donde apunta, si sigue vivo
     private String id;
     private double x;
     private double y;

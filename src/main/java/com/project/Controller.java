@@ -120,11 +120,6 @@ public class Controller implements Initializable {
         canvas.getScene().setOnKeyPressed(event -> {
             KeyCode key = event.getCode();
 
-            if (key == KeyCode.R) {
-                resetBoard();
-            return;
-            }
-
             if (!pressedKeys.add(key)) {
                 return;
             }
