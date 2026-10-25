@@ -4,6 +4,9 @@ package com.server;
 import org.glassfish.tyrus.server.Server;
 
 public class Main {
+    
+    // main: Configura, arranca y mantiene en ejecución un servidor WebSocket en el puerto 3000 bajo la ruta raíz, enlazándolo a la lógica de conexiones del juego y asegurando la liberación del puerto al finalizar.
+
     public static void main(String[] args) {
         /* 
          * Configura el servidor de WebSockets:

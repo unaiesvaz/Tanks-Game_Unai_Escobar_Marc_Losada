@@ -20,6 +20,7 @@ public class WaitingViewController {
     private int secondsRemaining = 5;
     private boolean countdownStarted = false; // Evita que la cuenta atrás se active más de una vez
 
+    // setMainApp: Vincula las referencias de la aplicación y la ventana con esta vista, inicializa los textos informativos en pantalla y registra este controlador en el cliente WebSocket para recibir las notificaciones de red.
     public void setMainApp(Main mainApp, Stage stage) {
         this.mainApp = mainApp;
         this.stage = stage;
@@ -31,10 +32,7 @@ public class WaitingViewController {
         WebsocketClient.getInstance().setWaitingController(this);
     }
 
-    /**
-     * Este método lo llamará tu sistema de red cada vez que llegue un JSON del servidor.
-     * @param totalPlayers El número de tanques activos devueltos por el JSON de STATE.
-     */
+    // onServerUpdateReceived: Recibe el recuento actual de jugadores desde el servidor y, en caso de detectar que ya se han conectado dos o más participantes, activa de forma única e hilada con la interfaz gráfica el inicio de la cuenta atrás.
     public void onServerUpdateReceived(int totalPlayers) {
         // Ejecutamos en el hilo de la interfaz de JavaFX
         Platform.runLater(() -> {
@@ -48,6 +46,7 @@ public class WaitingViewController {
         });
     }
 
+    // startCountdown: Configura y arranca un temporizador con intervalos de un segundo que actualiza un marcador numérico regresivo y, tras mostrar un mensaje de inicio, introduce un breve retardo antes de cargar el mapa de juego.
     private void startCountdown() {
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
