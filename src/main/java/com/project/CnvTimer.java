@@ -7,7 +7,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-public class CnvTimer extends AnimationTimer {
+public class CnvTimer extends AnimationTimer { //Clase para actualizar y dibujar animaciones
 
     public double fps;
     

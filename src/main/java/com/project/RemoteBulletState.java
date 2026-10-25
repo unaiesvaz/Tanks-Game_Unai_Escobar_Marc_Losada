@@ -1,6 +1,6 @@
 package com.project;
 
-public class RemoteBulletState {
+public class RemoteBulletState { //Clase de el estado de la bala (posicion)
     private final double x;
     private final double y;
 
