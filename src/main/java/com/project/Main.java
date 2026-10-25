@@ -57,25 +57,24 @@ public class Main extends Application {
     public void loadOriginalGame(Stage stage) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/assets/layout.fxml")
+                    getClass().getResource("/assets/layout.fxml")
             );
 
             Parent root = loader.load();
 
+            // Obtener el controlador de la partida.
             Controller controller = loader.getController();
 
-            // Entregar al controlador los datos de la partida.
+            // Pasarle la aplicación, la ventana y el nombre del jugador.
             controller.setGameContext(this, stage, playerName);
 
             Scene scene = new Scene(root);
             stage.setScene(scene);
-
             root.requestFocus();
 
         } catch (Exception e) {
-            System.err.println(
-                "Error al cargar el juego: " + e.getMessage()
-            );
+            System.err.println("Error al cargar el juego original: "
+                    + e.getMessage());
             e.printStackTrace();
         }
     }

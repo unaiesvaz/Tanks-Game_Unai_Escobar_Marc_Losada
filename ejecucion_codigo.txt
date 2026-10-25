@@ -1,4 +1,4 @@
-Para ejecutar el servidor:
+Para ejecutar el servidor: (Ya no es neceario ya que está en el proxmox)
 mvn -PrunMain "-Dexec.mainClass=com.server.Main" exec:java
 
 Para ejecutar un cliente:
