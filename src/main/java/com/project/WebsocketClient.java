@@ -30,7 +30,8 @@ public class WebsocketClient {
 
     private WebsocketClient() {
     }
-
+    
+    // getInstance: Implementa el patrón Singleton devolviendo la instancia única global del cliente de red, creándola en caso de que no exista previamente.
     public static WebsocketClient getInstance() {
         if (instance == null) {
             instance = new WebsocketClient();
@@ -38,20 +39,24 @@ public class WebsocketClient {
         return instance;
     }
 
+    // setWaitingController: Asigna el controlador de la sala de espera para coordinar las notificaciones de red sobre el número de jugadores conectados.
     public void setWaitingController(
             WaitingViewController controller) {
         this.waitingController = controller;
     }
 
+    // setGameStateListener: Vincula un callback encargado de procesar los cambios de estado de la partida cada vez que llega información del servidor.
     public void setGameStateListener(
             Consumer<GameState> listener) {
         this.gameStateListener = listener;
     }
 
+    // getMyPlayerId: Devuelve el identificador único que el servidor asignó a este cliente durante la negociación de la conexión.
     public String getMyPlayerId() {
         return myPlayerId;
     }
 
+    // connect: Inicia el contenedor WebSocket e intenta establecer una conexión activa y sincronizada con el servidor utilizando la dirección URL proporcionada.
     public synchronized boolean connect(String serverUrl) {
         if (session != null && session.isOpen()) {
             return true;
@@ -78,6 +83,7 @@ public class WebsocketClient {
         }
     }
 
+    // disconnect: Realiza el cierre controlado de la sesión de red actual, limpiando la referencia del socket y restableciendo el identificador del jugador.
     public synchronized void disconnect() {
         Session currentSession = session;
 
@@ -96,6 +102,7 @@ public class WebsocketClient {
         }
     }
 
+    // onOpen: Callback que se ejecuta de forma automática al completarse el apretón de manos inicial del WebSocket, almacenando la sesión de red activa.
     @OnOpen
     public void onOpen(Session session) {
         this.session = session;
@@ -103,6 +110,7 @@ public class WebsocketClient {
                 "[Red] Conexión WebSocket establecida.");
     }
 
+    // onMessage: Captura las transmisiones de texto del servidor, parsea el JSON para extraer los estados de tanques y proyectiles remotos, y notifica tanto a la sala de espera como al bucle visual del juego.
     @OnMessage
     public void onMessage(String message) {
         try {
@@ -179,6 +187,7 @@ public class WebsocketClient {
         }
     }
 
+    // onClose: Gestiona el evento de desconexión por parte del servidor o de la red, invalidando las referencias locales de sesión e identificador de jugador.
     @OnClose
     public void onClose(
             Session closedSession,
@@ -194,18 +203,21 @@ public class WebsocketClient {
         );
     }
 
+    // onError: Captura y envía a la consola de errores técnicos cualquier fallo o excepción ocurrida en el canal de comunicación del WebSocket.
     @OnError
     public void onError(Session session, Throwable error) {
         System.err.println(
                 "[Red] Error WebSocket: " + error.getMessage());
     }
 
+    // sendAction: Envía de forma asíncrona un comando simple empaquetado en JSON (como órdenes de movimiento o disparos) hacia el servidor.
     public void sendAction(String action) {
         JSONObject json = new JSONObject();
         json.put("type", action);
         sendJson(json);
     }
 
+    // sendAim: Envía al servidor un paquete JSON estructurado con las coordenadas físicas del puntero del ratón para actualizar el ángulo de la torreta.
     public void sendAim(double x, double y) {
         JSONObject json = new JSONObject();
         json.put("type", "AIM");
@@ -214,6 +226,7 @@ public class WebsocketClient {
         sendJson(json);
     }
 
+    // sendJson: Método privado utilitario que transmite de manera asíncrona cualquier objeto JSON a través de la sesión de texto del WebSocket si la conexión sigue abierta.
     private void sendJson(JSONObject json) {
         Session currentSession = session;
 

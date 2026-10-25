@@ -20,10 +20,7 @@ public class FirstViewController {
     private Main mainApp;
     private Stage stage;
 
-    /**
-     * Método para conectar la lógica de la clase Main con esta pantalla.
-     * Define también los valores que aparecerán escritos por defecto.
-     */
+    // setMainApp: Vincula las referencias de la aplicación principal y de la ventana gráfica a este controlador, estableciendo además los textos por defecto del jugador y del servidor en el formulario.
     public void setMainApp(Main mainApp, Stage stage) {
         this.mainApp = mainApp;
         this.stage = stage;
@@ -34,10 +31,7 @@ public class FirstViewController {
         }
     }
 
-    /**
-     * Este método se ejecuta automáticamente cuando el usuario hace clic 
-     * en el botón verde, gracias al "On Action" que configuramos.
-     */
+    // onConnectButtonClick: Valida que los campos de texto no estén vacíos y que la dirección del servidor tenga un protocolo válido (ws:// o wss://) para iniciar la conexión por WebSocket y redirigir al usuario a la sala de espera.
     @FXML
     private void onConnectButtonClick() {
         String name = nameField.getText().trim();

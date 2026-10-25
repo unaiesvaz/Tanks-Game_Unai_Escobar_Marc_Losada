@@ -17,9 +17,7 @@ public class ResultViewController {
     private Main mainApp;
     private Stage stage;
 
-    /**
-     * Configura la pantalla final mostrando si has ganado/perdido y el nombre del ganador.
-     */
+    // setGameResult: Configura las etiquetas de texto de la pantalla final modificando el título y el mensaje de detalle en español con los nombres de los competidores según si el jugador local ha ganado o perdido.
     public void setGameResult(Main mainApp, Stage stage, boolean isWinner, String myName, String enemyName) {
         this.mainApp = mainApp;
         this.stage = stage;
@@ -42,9 +40,7 @@ public class ResultViewController {
         winnerDetailLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #34495e;");
     }
 
-    /**
-     * Acción del botón: reconecta de forma automática y te manda a la sala de espera (Vista 2)
-     */
+    // onBackButtonClick: Gestiona la acción de revancha limpiando los oyentes y cerrando la conexión previa para redirigir al usuario a la sala de espera e iniciar una nueva solicitud de conexión por WebSocket al servidor.
     @FXML
     private void onBackButtonClick() {
         System.out.println(
