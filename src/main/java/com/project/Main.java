@@ -12,19 +12,23 @@ public class Main extends Application {
     private String playerName = "Jugador_1";
     private String serverUrl = "wss://uescobarvazquez.ieti.site/tanks";
 
+    // setConnectionDetails: Guarda en las variables de la clase las credenciales de conexión introducidas por el usuario (nombre del jugador y dirección URL del servidor).
     public void setConnectionDetails(String playerName, String serverUrl) {
         this.playerName = playerName;
         this.serverUrl = serverUrl;
     }
 
+    // getPlayerName: Devuelve el nombre del jugador configurado actualmente en la aplicación.
     public String getPlayerName() {
         return playerName;
     }
 
+    // getServerUrl: Devuelve la dirección URL del servidor de WebSockets configurada actualmente.
     public String getServerUrl() {
         return serverUrl;
     }
 
+    // start: Punto de entrada de la aplicación JavaFX que define el título, las restricciones de tamaño y el icono de la ventana, cargando la interfaz gráfica inicial del menú de configuración.
     @Override
     public void start(Stage stage) throws Exception {
         // 1. Aplicamos tus configuraciones visuales originales a la ventana
@@ -50,10 +54,7 @@ public class Main extends Application {
         stage.show();
     }
 
-    /**
-     * Este método contiene EXACTAMENTE tu código original.
-     * Lo llamaremos desde el FirstViewController cuando el jugador pulse el botón de conectar.
-     */
+    // loadOriginalGame: Carga el archivo de diseño FXML de la partida, obtiene su controlador, le pasa el contexto del juego y transfiere el enfoque del teclado a la ventana para empezar a jugar.
     public void loadOriginalGame(Stage stage) {
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -79,25 +80,24 @@ public class Main extends Application {
         }
     }
 
+    // loadWaitingRoom: Carga el archivo de diseño FXML de la sala de espera vinculando su respectivo controlador para retener al usuario antes del inicio de la partida.
     public void loadWaitingRoom(Stage stage) {
-    try {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/assets/waiting_view.fxml"));
-        Parent root = loader.load();
-        
-        WaitingViewController controller = loader.getController();
-        controller.setMainApp(this, stage);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/assets/waiting_view.fxml"));
+            Parent root = loader.load();
+            
+            WaitingViewController controller = loader.getController();
+            controller.setMainApp(this, stage);
 
-        Scene scene = new Scene(root);
-        stage.setScene(scene);
-    } catch (Exception e) {
-        System.err.println("Error al cargar la sala de espera: " + e.getMessage());
-        e.printStackTrace();
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+        } catch (Exception e) {
+            System.err.println("Error al cargar la sala de espera: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
-}
 
-    /**
-     * Carga la cuarta vista de resultados mostrando quién ha ganado y permitiendo revancha.
-     */
+    // loadResultView: Carga el archivo de diseño FXML de la pantalla de resultados, transfiriéndole al controlador los datos finales sobre quién venció y los nombres de los competidores.
     public void loadResultView(Stage stage, boolean isWinner, String myName, String enemyName) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/assets/result_view.fxml"));
@@ -115,7 +115,7 @@ public class Main extends Application {
         }
     }
 
-
+    // main: Método de arranque principal de la plataforma de Java que invoca la inicialización del ciclo de vida de la aplicación JavaFX.
     public static void main(String[] args) {
         launch(args);
     }

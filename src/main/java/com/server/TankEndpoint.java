@@ -17,11 +17,12 @@ public class TankEndpoint {
     private static final ClientRegistry registry = new ClientRegistry();
     private static final GameManager gameManager = new GameManager(registry);
 
+    // static: Bloque estático que inicia el bucle y reloj principal del juego en cuanto el servidor carga la clase del endpoint.
     static {
-        // En cuanto el servidor arranca esta clase, encendemos el reloj del juego
         gameManager.startGameLoop();
     }
 
+    // onOpen: Gestiona la apertura de una conexión WebSocket registrando al cliente de red, asignándole un tanque en una posición matemática inicial según el orden de entrada y enviándole un mensaje de bienvenida con su identificador único.
     @OnOpen
     public void onOpen(Session session) {
         // Usamos el ID único que genera el WebSocket para identificar al jugador
@@ -51,6 +52,7 @@ public class TankEndpoint {
         
     }
 
+    // onMessage: Procesa los mensajes JSON recibidos desde el cliente para actualizar el apuntado de la torreta, ejecutar acciones de disparo o modificar los estados de dirección del movimiento del tanque si este sigue con vida.
     @OnMessage
     public void onMessage(String message, Session session) {
         String playerId = session.getId();
@@ -128,6 +130,7 @@ public class TankEndpoint {
         }
     }
 
+    // onClose: Realiza la limpieza del jugador cuando este se desconecta de la partida, eliminando tanto su tanque del gestor de juego como su sesión del registro de red de clientes.
     @OnClose
     public void onClose(Session session) {
         String playerId = session.getId();
@@ -136,6 +139,7 @@ public class TankEndpoint {
         registry.unregisterClient(playerId);
     }
 
+    // onError: Captura y registra por la consola de errores cualquier fallo técnico o excepción ocurrida durante la comunicación en la conexión de un jugador específico.
     @OnError
     public void onError(Session session, Throwable throwable) {
         String playerId = session.getId();

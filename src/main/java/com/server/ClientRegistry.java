@@ -7,30 +7,27 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClientRegistry {
     
     // Guarda las conexiones activas asociando un ID único de jugador con su sesión WebSocket.
-    // Usamos ConcurrentHashMap para evitar problemas si varios hilos acceden a la vez.
+    // Se usa ConcurrentHashMap para evitar problemas si varios hilos acceden a la vez.
     private final Map<String, Session> activeSessions = new ConcurrentHashMap<>();
 
-    // Registra a un nuevo jugador cuando abre la conexión
+    // registerClient: Registra a un nuevo jugador asociando su ID único con su sesión WebSocket activa en el mapa de conexiones.
     public void registerClient(String playerId, Session session) {
         activeSessions.put(playerId, session);
         System.out.println("[Registro] Jugador conectado con ID: " + playerId);
     }
 
-    // Elimina al jugador cuando se cierra la conexión o hay un error
+    // unregisterClient: Elimina la sesión de un jugador del mapa de conexiones activas utilizando su ID único.
     public void unregisterClient(String playerId) {
         activeSessions.remove(playerId);
         System.out.println("[Registro] Jugador desconectado con ID: " + playerId);
     }
 
-    // Devuelve el mapa completo por si necesitamos consultar las conexiones
+    // getActiveSessions: Devuelve el mapa que contiene todas las sesiones de los jugadores conectados actualmente.
     public Map<String, Session> getActiveSessions() {
         return activeSessions;
     }
 
-    /**
-     * Hace un BROADCAST. Toma cualquier mensaje (como nuestro JSON de STATE)
-     * y se lo envía de manera asíncrona a TODOS los clientes conectados.
-     */
+   // broadcast: Envía de forma asíncrona un mensaje de texto a todos los clientes que tienen una sesión WebSocket abierta en ese momento.
     public void broadcast(String message) {
         for (Session session : activeSessions.values()) {
             if (session.isOpen()) {
